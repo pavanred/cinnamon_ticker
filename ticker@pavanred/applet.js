@@ -68,10 +68,11 @@ MyApplet.prototype = {
 		this.startIndex = 0;
 		this.displayLength = 30;
 		this.text = '';
+		this.tickerSpeed = 200; //ms
 				
 		try {
 
-		    Mainloop.timeout_add(200, Lang.bind(this, this.change));
+		    Mainloop.timeout_add(this.tickerSpeed, Lang.bind(this, this.change));
 		}
 		catch (e) {
 			global.log("exception:"  + e);
@@ -105,7 +106,7 @@ MyApplet.prototype = {
 			
 			this.set_applet_label(this.getDisplaySubstring());			
 			this.startIndex++;
-	        Mainloop.timeout_add(200, Lang.bind(this, this.change));
+	        Mainloop.timeout_add(this.tickerSpeed, Lang.bind(this, this.change));
 		}
 		catch (e) {
 			global.log("exception:"  + e);

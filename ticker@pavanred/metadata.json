@@ -1,6 +1,6 @@
 {
-"uuid": "stockwatch@pavanred",
-"name": "stockwatch",
-"description": "Live stock updates",
+"uuid": "ticker@pavanred",
+"name": "ticker",
+"description": "",
 "version": "0.1"
 }
