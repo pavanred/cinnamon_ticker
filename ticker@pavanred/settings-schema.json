@@ -1,0 +1,46 @@
+{
+	"Configuration" : 
+	{
+    	"type" : "header",
+    	"description" : "Real Time Stock Quotes"
+  	},
+  	"stocks":
+	{ 
+		"type": "entry",
+		"default": "NASDAQ:MSFT",
+		"description": "Stocks" 
+	},
+	  		
+  	"Options" : 
+	{
+    	"type" : "header",
+    	"description" : "Settings"
+  	},
+  	"ticker_speed":
+  	{ 
+		"type": "scale",
+		"default": 200,
+		"min": 50,
+		"max": 700,
+		"step": 10,
+		"description": "Ticker Speed (milliseconds)"
+	},
+	"display_length":
+  	{ 
+		"type": "scale",
+		"default": 30,
+		"min": 10,
+		"max": 70,
+		"step": 1,
+		"description": "Display Window Length (Number of characters)"
+	},
+	"stock_refresh_interval":
+  	{ 
+		"type": "scale",
+		"default": 60,
+		"min": 30,
+		"max": 600,
+		"step": 1,
+		"description": "Stock Quote Update Frequency (seconds)"
+	} 
+ }

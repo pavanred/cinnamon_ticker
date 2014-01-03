@@ -3,7 +3,7 @@
  *  Cinnamon applet - ticker
  *
  *  Author
- *	 Pavan Reddy <pavankumar.kh@gmail.com>
+ *	Pavan Reddy <pavankumar.kh@gmail.com>
  *
  * This file is part of ticker.
  *
@@ -40,79 +40,146 @@ const Util = imports.misc.util;
 const GLib = imports.gi.GLib;
 const Mainloop = imports.mainloop;
 const Gtk = imports.gi.Gtk;
+const Settings = imports.ui.settings;
+const Json = imports.gi.Json
+const Soup = imports.gi.Soup
 
 /*------------------------
  * Constants
  * ------------------------*/
 
 const UUID = 'ticker@pavanred';
+const CMD_SETTINGS = "cinnamon-settings applets " + UUID;
+const LOADING_TEXT = 'Retrieving data...';
+const STOCK_BASEURL = 'http://finance.google.com/finance/info?q=';
+
+const _httpSession = new Soup.SessionAsync();
+Soup.Session.prototype.add_feature.call(_httpSession, new Soup.ProxyResolverDefault());
 
 /*------------------------
- * Main
+ * Keys
  * ------------------------*/
-function main(metadata, orientation) {
-	let myApplet = new MyApplet(orientation);
-	return myApplet;
-};
+const TICKER_SPEED = "ticker_speed";
+const DISPLAY_LENGTH = "display_length";
+const STOCKS = "stocks";
+const REFRESH_INTERVAL = "stock_refresh_interval";
 
-function MyApplet(orientation) {
-	this._init(orientation);
+const KEYS = [
+  TICKER_SPEED,
+  DISPLAY_LENGTH,
+  STOCKS,
+  REFRESH_INTERVAL
+]
+
+function ticker(metadata, orientation, panelHeight, instanceId) {
+	this.settings = new Settings.AppletSettings(this, UUID, instanceId)
+	this._init(orientation, panelHeight, instanceId);
 }
 
-MyApplet.prototype = {
+ticker.prototype = {
 	__proto__: Applet.TextIconApplet.prototype,
 
-	_init: function(orientation) {
-		Applet.TextIconApplet.prototype._init.call(this, orientation);
+	_init: function(orientation, panelHeight, instanceId) {
 		
-		this.startIndex = 0;
-		this.displayLength = 30;
-		this.text = '';
-		this.tickerSpeed = 200; //ms
-				
-		try {
+		Applet.TextIconApplet.prototype._init.call(this, orientation, panelHeight, instanceId);
+		
+		for (let k in KEYS) {
+			let key = KEYS[k]
+			let keyProp = "_" + key
+			this.settings.bindProperty(Settings.BindingDirection.IN, key, keyProp, null, null)
+		}
 
-		    Mainloop.timeout_add(this.tickerSpeed, Lang.bind(this, this.change));
+		this.set_applet_label(LOADING_TEXT);
+		var url = STOCK_BASEURL + this._stocks;		
+		this.getStockQuotesAsync(url, function(stockQuotes){
+			try{
+				global.log('in callback');
+				global.log(stockQuotes.length);
+			}
+			catch (e) {
+				global.log('ticker@pavanred : exception'  + e);
+			};
+		});
+		//this.tick();
+		
+		/*try {
+		    Mainloop.timeout_add(this._stock_refresh_interval, Lang.bind(this, this.getStockQuotesContent()));
 		}
 		catch (e) {
 			global.log("exception:"  + e);
+		};*/
+	},
+	
+	getStockQuotesAsync: function(url, callback) {
+		try{		
+			let context = this;
+		    let message = Soup.Message.new('GET', url);
+		    global.log(url);
+		    _httpSession.queue_message(message, function(session,message){
+		    	global.log('The message status : ' + message.status_code);
+		    	global.log('The message body : ' + message.response_body.data);
+		    	
+		    	if (message.status_code !== 200) {
+					global.log('ticker@pavanred : error fetching stock quotes');
+					return;
+				}
+		    	global.log('before parsing');
+		    	var stockQuotes = Json.json_parse(message.response_body.data, null);	
+		    	global.log(stockQuotes);
+		    	callback.call(context, stockQuotes);
+		    })
+	    }
+		catch (e) {
+			global.log("ticker@pavanred : exception "  + e);
 		};
 	},
 	
-	getDisplaySubstring: function() {
-		try{
-			
-			var overflow = this.text.length - this.startIndex;
-						
-			if (overflow < this.displayLength){
-				
-				if(this.startIndex == this.text.length){
+	/*getDisplaySubstring: function(display_string) {
+		try{			
+			var overflow = display_string.length - this.startIndex;						
+			if (overflow < this._display_length){				
+				if(this.startIndex == display_string.length){
 					this.startIndex = 0;
+					
 				}
-				
-				return test.substr(this.startIndex, overflow) + test.substr(0, this.displayLength - overflow);
-			}
-			
-			return test.substr(this.startIndex, this.displayLength);
+				return display_string.substr(this.startIndex, overflow) + display_string.substr(0, this._display_length - overflow);
+			}			
+			return display_string.substr(this.startIndex, this._display_length);
 		}
 		catch (e) {
 			global.log("exception:"  + e);
 		};	
-    },
+    },*/
     
-    change: function() {
-        
-		try{
-			
-			this.set_applet_label(this.getDisplaySubstring());			
-			this.startIndex++;
-	        Mainloop.timeout_add(this.tickerSpeed, Lang.bind(this, this.change));
+    tick: function() {
+    	
+    	this.set_applet_label(this.content);
+    	
+		/*try{
+			if(this.content_contsruct != ''){
+				this.display_content = this.content_construct;	
+				this.content_contsruct = '';		
+			}
+			this.setDisplay();			
+	        Mainloop.timeout_add(this._ticker_speed, Lang.bind(this, this.tick()));
 		}
 		catch (e) {
 			global.log("exception:"  + e);
-		};
+		};*/
     }
+    
+    /*setDisplay: function(){
+		var displayString = this.getDisplaySubstring();		
+		this.set_applet_label(displayString);
+	}*/
 };
 
 
+/*------------------------
+ * Main
+ * ------------------------*/
+function main(metadata, orientation, panelHeight, instanceId) {
+	let myApplet = new ticker(metadata, orientation, panelHeight, instanceId);
+	return myApplet;
+};
 

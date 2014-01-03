@@ -1,6 +1,6 @@
 {
 "uuid": "ticker@pavanred",
 "name": "ticker",
-"description": "",
+"description": "ticker - stock quotes",
 "version": "0.1"
 }
